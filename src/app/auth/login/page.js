@@ -1,5 +1,6 @@
 //src/app/auth/login/page.js
 "use client";
+
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Image from 'next/image';
@@ -17,32 +18,32 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     // En tu página de login
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-        console.log("Intentando iniciar sesión con:", email);
-        const result = await signIn("credentials", {
-            email,
-            password,
-            redirect: false,
-        });
-        console.log("Resultado de signIn:", result);
-
-        if (result?.error) {
-            setError("Credenciales inválidas");
-        } else {
-            router.push("/dashboard");
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setIsLoading(true);
+    
+        try {
+            console.log("Intentando iniciar sesión con:", email);
+            const result = await signIn("credentials", {
+                email,
+                password,
+                redirect: false,
+            });
+            console.log("Resultado de signIn:", result);
+    
+            if (result?.error) {
+                setError("Credenciales inválidas");
+            } else {
+                router.push("/dashboard");
+            }
+        } catch (error) {
+            console.error("Error completo:", error);
+            setError("Error al iniciar sesión");
+        } finally {
+            setIsLoading(false);
         }
-    } catch (error) {
-        console.error("Error completo:", error);
-        setError("Error al iniciar sesión");
-    } finally {
-        setIsLoading(false);
-    }
-};
+    };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-200 p-4 md:p-8">
