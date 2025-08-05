@@ -1,48 +1,52 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
 import Image from "next/image";
-import { FaHome, FaFileInvoiceDollar, FaUsers, FaChartBar, FaCog, FaSignOutAlt, FaUserAlt, FaBuilding } from "react-icons/fa";
-import logo from "../../../app/images/logo.jpg";
-import axios from "axios";
+import { FaHome, FaFileInvoiceDollar, FaUsers, FaChartBar, FaCog, FaSignOutAlt, FaUserAlt, FaBuilding, FaBoxOpen, FaFileContract, FaFileInvoice, FaFileAlt } from "react-icons/fa";
+import logo from "../../../app/images/logoo.png";
+import { logout } from "../../services/auth";
 import { useState } from "react";
 
 export default function Sidebar() {
-    // Siempre declara todos los hooks al principio, antes de cualquier lógica condicional
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [isClientsOpen, setIsClientsOpen] = useState(false); // Estado para controlar la apertura del submenú Clientes
+    const [openMenus, setOpenMenus] = useState({
+        dtes: false, // Estado para el menú de DTES
+        clients: false, // Estado para el menú de Clientes
+    });
 
-    
-    const handleSignOut = async () => {
-        if (isLoggingOut) return; // Prevenir múltiples clicks
-        
+    const handleLogout = async () => {
         setIsLoggingOut(true);
-        
         try {
-            // Primero llama a tu endpoint de backend para limpiar la cookie
-            await axios.post("/api/auth/logout", {}, {
-                withCredentials: true // Importante para enviar/recibir cookies
-            });
-            
-            // Luego cierra la sesión en NextAuth
-            await signOut({ redirect: false });
-            
-            // Finalmente, redirige al usuario
+            await logout();
             router.push("/auth/login");
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
-            // Aún así intentamos cerrar la sesión en el cliente
-            await signOut({ redirect: false });
-            router.push("/auth/login");
         } finally {
             setIsLoggingOut(false);
         }
     };
-    
+
+    const toggleMenu = (menu) => {
+        setOpenMenus((prevState) => ({
+            ...prevState,
+            [menu]: !prevState[menu], // Alternar el estado del menú seleccionado
+        }));
+    };
+
     const menuItems = [
         { name: "Inicio", icon: <FaHome />, href: "#" },
-        { name: "Facturas", icon: <FaFileInvoiceDollar />, href: "#" },
+        { 
+            name: "DTES", 
+            icon: <FaFileInvoiceDollar />, 
+            href: "#",
+            subMenu: [
+                { name: "DTE Factura", icon: <FaFileInvoice />, href: "/dashboard/dte_factura" },
+                { name: "DTE Credito", icon: <FaFileContract />, href: "/dashboard/dte_credito" }
+            ],
+            menuKey: "dtes" // Clave única para el menú de DTES
+        },
+        { name: "Facturas", icon: <FaFileAlt />, href: "/dashboard/facturas" },
+        { name: "Creditos", icon: <FaFileAlt />, href: "/dashboard/creditos" },
         { 
             name: "Clientes", 
             icon: <FaUsers />, 
@@ -50,47 +54,51 @@ export default function Sidebar() {
             subMenu: [
                 { name: "Persona Natural", icon: <FaUserAlt />, href: "/dashboard/persona_natural" },
                 { name: "Persona Jurídica", icon: <FaBuilding />, href: "/dashboard/persona_juridica" }
-            ]
+            ],
+            menuKey: "clients" // Clave única para el menú de Clientes
         },
+        { name: "Productos", icon: <FaBoxOpen />, href: "/dashboard/productos" },
         { name: "Reportes", icon: <FaChartBar />, href: "#" },
         { name: "Configuración", icon: <FaCog />, href: "#" },
     ];
-    
+
     return (
-        <aside className="bg-blue-900 h-full w-64">
+    <aside className="bg-blue-900 h-full w-64">
             <div className="flex flex-col h-full">
                 {/* Logo y Título */}
-                <div className="flex items-center justify-center h-20 border-b border-blue-800">
-                    <div className="relative h-12 w-12 rounded-full overflow-hidden">
+                <div className="bg-blue-800 flex items-center justify-center h-20 border-b border-blue-700">
+                    <div className="bg-white relative h-14 w-14 rounded-full overflow-hidden shadow-md">
                         <Image src={logo} alt="Byte Fusion Soluciones" fill className="object-cover" />
                     </div>
-                    <span className="ml-3 text-white font-semibold text-lg">Facturador</span>
+                    <div className="ml-3">
+                        <span className="text-blue-50 font-semibold text-lg">Facturador</span>
+                    </div>
                 </div>
                 {/* Navegación */}
                 <nav className="flex-1 py-4 px-2 overflow-y-auto">
                     <ul className="space-y-2">
-                        {menuItems.map(({ name, icon, href, subMenu }) => (
+                        {menuItems.map(({ name, icon, href, subMenu, menuKey }) => (
                             <li key={name}>
                                 {subMenu ? (
                                     <div>
                                         <a
                                             href="#"
-                                            className="flex items-center px-4 py-3 text-blue-100 rounded-md transition-all duration-200 hover:bg-blue-700 hover:text-white"
+                                            className="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-300 hover:bg-gradient-to-r hover:from-sky-600/60 hover:to-cyan-600/60 hover:text-white hover:shadow-md hover:shadow-blue-500/20 hover:backdrop-blur-sm"
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                setIsClientsOpen(!isClientsOpen); // Cambiar el estado para abrir/cerrar el submenú
+                                                toggleMenu(menuKey); // Alternar el estado del menú correspondiente
                                             }}
                                         >
                                             <span className="text-lg">{icon}</span>
                                             <span className="ml-3">{name}</span>
                                         </a>
-                                        {isClientsOpen && ( // Mostrar el submenú solo si está abierto
+                                        {openMenus[menuKey] && ( // Mostrar submenú si el menú está abierto
                                             <ul className="pl-6 space-y-2">
                                                 {subMenu.map(({ name, icon, href }) => (
                                                     <li key={name}>
                                                         <a
                                                             href={href}
-                                                            className="flex items-center px-4 py-3 text-blue-100 rounded-md transition-all duration-200 hover:bg-blue-700 hover:text-white"
+                                                            className="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-300 hover:bg-gradient-to-r hover:from-sky-600/60 hover:to-cyan-600/60 hover:text-white hover:shadow-md hover:shadow-blue-500/20 hover:backdrop-blur-sm"
                                                         >
                                                             <span className="text-lg">{icon}</span>
                                                             <span className="ml-3">{name}</span>
@@ -103,7 +111,7 @@ export default function Sidebar() {
                                 ) : (
                                     <a
                                         href={href}
-                                        className="flex items-center px-4 py-3 text-blue-100 rounded-md transition-all duration-200 hover:bg-blue-700 hover:text-white"
+                                        className="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-300 hover:bg-gradient-to-r hover:from-sky-600/60 hover:to-cyan-600/60 hover:text-white hover:shadow-md hover:shadow-blue-500/20 hover:backdrop-blur-sm"
                                     >
                                         <span className="text-lg">{icon}</span>
                                         <span className="ml-3">{name}</span>
@@ -114,13 +122,13 @@ export default function Sidebar() {
                     </ul>
                 </nav>
                 {/* Logout */}
-                <div className="p-4 border-t border-blue-800">
+                <div className="bg-blue-800 p-4 border-t border-blue-700">
                     <button
-                        onClick={handleSignOut}
+                        onClick={handleLogout}
                         disabled={isLoggingOut}
-                        className="flex items-center w-full px-4 py-3 text-blue-100 rounded-md transition-all duration-200 hover:bg-blue-700 hover:text-white disabled:opacity-50"
+                        className="flex items-center justify-center w-full px-4 py-3 text-blue-200 border border-blue-600 rounded-md transition-all duration-200 hover:bg-blue-700 hover:text-white hover:border-blue-500 disabled:opacity-50"
                     >
-                        <FaSignOutAlt className="text-lg" />
+                        <FaSignOutAlt className="text-base" />
                         <span className="ml-3">{isLoggingOut ? "Cerrando sesión..." : "Cerrar Sesión"}</span>
                     </button>
                 </div>

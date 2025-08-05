@@ -1,34 +1,20 @@
-//dasboard/welcome-client.js
+//src/app/dasboard/welcome-client.js
 "use client";
 import { useState, useEffect } from "react";
 import { FaSearch, FaBars, FaTimes } from "react-icons/fa";
 import Sidebar from "./components/sidebar";
 import Footer from "./components/footer";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function WelcomeClient() {
     // Declara todos los hooks primero, sin condiciones
     const router = useRouter();
-    const { data: session, status } = useSession();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [userName, setUserName] = useState("Cliente");
     const [isLoading, setIsLoading] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
 
-    // Efecto para la redirección de autenticación
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/auth/login");
-        }
-    }, [status, router]);
-    
-    // Efecto para actualizar el nombre de usuario
-    useEffect(() => {
-        if (status === "authenticated" && session?.user) {
-            setUserName(session.user.name || "Cliente");
-        }
-    }, [session, status]);
+   
 
     
 
@@ -66,10 +52,7 @@ export default function WelcomeClient() {
         setSidebarOpen(!sidebarOpen);
     };
 
-    // Si aún está cargando o no está autenticado, no rendericemos nada
-    if (status === "loading" || status === "unauthenticated") {
-        return null; // No renderizar nada mientras se verifica la autenticación
-    }
+  
 
 
     return (

@@ -1,11 +1,11 @@
 // src/app/dashboard/persona_juridica/page.js
-import PersonaJuridica from "./personaJuridica";
+import Productos from "./productos";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { checkAuth } from "../../../lib/auth";
 
-export default async function PersonaJu() {
+export default async function Produc() {
     // Obtener las cookies del usuario (usando await)
   const cookieStore = await cookies(); // ¡Aquí está el cambio!
   const cookie = cookieStore
@@ -22,9 +22,9 @@ export default async function PersonaJu() {
   }
 
     // Obtener las empresas del usuario
-    let empresas = []; // Inicializar como array vacío
+    let productos = []; // Inicializar como array vacío
     try {
-        const response = await fetch("http://localhost:3000/personasJuridicas/getAll", {
+        const response = await fetch("http://localhost:3000/productos/getAll", {
             method: "GET",
             headers: {
                 Cookie: cookie,
@@ -33,15 +33,15 @@ export default async function PersonaJu() {
         });
 
         if (!response.ok) {
-            throw new Error("Error al obtener las empresas");
+            throw new Error("Error al obtener los productos");
         }
 
-        empresas = await response.json();
+        productos = await response.json();
     } catch (error) {
-        console.error("Error al obtener las empresas:", error);
+        console.error("Error al obtener los productos:", error);
     }
 
-    // Pasar las empresas y el usuario como props al Client Component
+    // Pasar los productos y el usuario como props al Client Component
     return (
         <Suspense
             fallback={
@@ -50,7 +50,7 @@ export default async function PersonaJu() {
                 </div>
             }
         >
-            <PersonaJuridica initialEmpresas={empresas} user={user} />
+            <Productos initialProductos={productos} user={user} />
             </Suspense>
     );
 }

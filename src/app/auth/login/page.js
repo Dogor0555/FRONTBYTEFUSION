@@ -1,13 +1,13 @@
-//src/app/auth/login/page.js
+// src/app/auth/login/page.js
 "use client";
 
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Image from 'next/image';
 import img from '../../images/factura.jpg';
-import logo from '../../images/logo.jpg';
-import { signIn } from "next-auth/react";
+import logo from '../../images/logoo.png';
 import { useRouter } from "next/navigation";
+import { login } from '../../services/auth';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -17,29 +17,16 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    // En tu página de login
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setIsLoading(true);
-    
+
         try {
-            console.log("Intentando iniciar sesión con:", email);
-            const result = await signIn("credentials", {
-                email,
-                password,
-                redirect: false,
-            });
-            console.log("Resultado de signIn:", result);
-    
-            if (result?.error) {
-                setError("Credenciales inválidas");
-            } else {
-                router.push("/dashboard");
-            }
+            await login(email, password);
+            router.push("/dashboard");
         } catch (error) {
-            console.error("Error completo:", error);
-            setError("Error al iniciar sesión");
+            setError("Credenciales inválidas");
         } finally {
             setIsLoading(false);
         }
@@ -138,12 +125,6 @@ export default function LoginPage() {
                                 <span className="mx-4 text-xs text-gray-500 md:text-sm">O</span>
                                 <div className="flex-1 border-t border-gray-300"></div>
                             </div>
-                           {/* 
-                            <div className="mt-4 text-center text-xs md:mt-6 md:text-sm">
-                                <a href="#" className="text-blue-600 transition-colors duration-200 hover:text-blue-800 hover:underline">
-                                 ¿Olvidaste tu contraseña?
-                                </a>
-                            </div>*/}
 
                             <div className="mt-3 text-center text-xs md:mt-4 md:text-sm">
                                 <span className="text-gray-600">¿No tienes una cuenta? </span>

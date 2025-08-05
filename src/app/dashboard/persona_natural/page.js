@@ -1,11 +1,11 @@
 // src/app/dashboard/persona_juridica/page.js
-import PersonaJuridica from "./personaJuridica";
+import PersonaNatural from "./personaNatural";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { checkAuth } from "../../../lib/auth";
 
-export default async function PersonaJu() {
+export default async function PersonaNa() {
     // Obtener las cookies del usuario (usando await)
   const cookieStore = await cookies(); // ¡Aquí está el cambio!
   const cookie = cookieStore
@@ -21,10 +21,10 @@ export default async function PersonaJu() {
     redirect("/auth/login");
   }
 
-    // Obtener las empresas del usuario
-    let empresas = []; // Inicializar como array vacío
+    // Obtener las personasNa del usuario
+    let personasNa = []; // Inicializar como array vacío
     try {
-        const response = await fetch("http://localhost:3000/personasJuridicas/getAll", {
+        const response = await fetch("http://localhost:3000/personasNaturales/getAll", {
             method: "GET",
             headers: {
                 Cookie: cookie,
@@ -33,15 +33,15 @@ export default async function PersonaJu() {
         });
 
         if (!response.ok) {
-            throw new Error("Error al obtener las empresas");
+            throw new Error("Error al obtener las personasNa");
         }
 
-        empresas = await response.json();
+        personasNa = await response.json();
     } catch (error) {
-        console.error("Error al obtener las empresas:", error);
+        console.error("Error al obtener las personas naturales:", error);
     }
 
-    // Pasar las empresas y el usuario como props al Client Component
+    // Pasar las personasNa y el usuario como props al Client Component
     return (
         <Suspense
             fallback={
@@ -50,7 +50,7 @@ export default async function PersonaJu() {
                 </div>
             }
         >
-            <PersonaJuridica initialEmpresas={empresas} user={user} />
+            <PersonaNatural initialPersonas={personasNa} user={user} />
             </Suspense>
     );
 }
