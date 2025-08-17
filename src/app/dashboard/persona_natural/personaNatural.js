@@ -22,10 +22,12 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
     const [telefonoError, setTelefonoError] = useState("");
     const [complementoError, setComplementoError] = useState("");
     const [documentoError, setDocumentoError] = useState("");
+    const [nombreError, setNombreError] = useState("");
+    const [correoError, setCorreoError] = useState("");
     const [formData, setFormData] = useState({
         nombre: "",
-        tipodocumento: "", // Código del tipo de documento (ej: "01" para DUI)
-        documento: "", // Número del documento (ej: "06474895-3")
+        tipodocumento: "",
+        documento: "",
         codactividad: "",
         correo: "",
         telefono: "",
@@ -35,6 +37,15 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
     });
     const [personaToDelete, setPersonaToDelete] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Límites de caracteres para cada campo
+    const LIMITES = {
+        NOMBRE: 100,
+        DOCUMENTO: 20,
+        CORREO: 100,
+        TELEFONO: 8,
+        COMPLEMENTO: 100
+    };
 
     const [selectedDepartamento, setSelectedDepartamento] = useState("");
     const [selectedMunicipio, setSelectedMunicipio] = useState("");
@@ -118,7 +129,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
         { codigo: "001", nombre: "Agricultura" },
         { codigo: "002", nombre: "Manufactura" },
         { codigo: "003", nombre: "Comercio" },
-        // Agrega más actividades económicas según sea necesario
     ];
 
     useEffect(() => {
@@ -145,7 +155,7 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
     const getNombreActividadEconomica = (codigo) => {
         const actividad = actividadesEconomicas.find(act => act.codigo === codigo);
         return actividad ? actividad.nombre : "Desconocido";
-      };
+    };
 
     const getNombreTipoDocumento = (codigo) => {
         const tipoDocumento = tiposDocumento.find(tipo => tipo.codigo === codigo);
@@ -217,27 +227,109 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
         }
     };
 
+    const validateDocumento = (documento, tipoDocumento) => {
+        // Validar longitud máxima
+        if (documento.length > LIMITES.DOCUMENTO) {
+            return false;
+        }
+
+        // Validaciones específicas por tipo
+        switch(tipoDocumento) {
+            case "36": // NIT
+                return /^\d{14}$/.test(documento);
+            case "13": // DUI
+                return /^\d{9}$/.test(documento);
+            case "03": // Pasaporte
+                return /^[A-Za-z0-9]{6,20}$/.test(documento);
+            case "02": // Carnet de Residentes
+                return /^(RT|RP)\d{7}$/i.test(documento);
+            case "37": // Otro
+                return documento.length > 0;
+            default:
+                return false;
+        }
+    };
+
+    const validateTelefono = (telefono) => {
+        if (telefono.length > LIMITES.TELEFONO) {
+            return false;
+        }
+        const telefonoRegex = /^\d{8}$/;
+        return telefonoRegex.test(telefono);
+    };
+
+    const validateComplemento = (complemento) => {
+        return complemento.length <= LIMITES.COMPLEMENTO;
+    };
+
+    const validateNombre = (nombre) => {
+        return nombre.length <= LIMITES.NOMBRE;
+    };
+
+    const validateCorreo = (correo) => {
+        return correo.length <= LIMITES.CORREO;
+    };
+
     const handleSaveNewPersona = async (e) => {
         e.preventDefault();
 
-        // Validaciones
-        if (!validateDocumento(formData.documento)) {
-            setErrorMessage("Formato de documento inválido.");
-            setShowErrorModal(true);
-            return;
-        }
-        if (!validateTelefono(formData.telefono)) {
-            setErrorMessage("Formato de teléfono inválido. Use el formato ####-####.");
-            setShowErrorModal(true);
-            return;
-        }
-        if (!validateComplemento(formData.complemento)) {
-            setErrorMessage("El complemento no puede exceder los 60 caracteres.");
+        // Validar nombre
+        if (!validateNombre(formData.nombre)) {
+            setErrorMessage(`El nombre no puede exceder los ${LIMITES.NOMBRE} caracteres.`);
             setShowErrorModal(true);
             return;
         }
 
-        // Preparar los datos para enviar al endpoint
+        // Validar documento
+        if (!validateDocumento(formData.documento, formData.tipodocumento)) {
+            let errorMsg = "";
+            if (formData.documento.length > LIMITES.DOCUMENTO) {
+                errorMsg = `El documento no puede exceder los ${LIMITES.DOCUMENTO} caracteres.`;
+            } else {
+                errorMsg = "Formato de documento inválido. ";
+                switch(formData.tipodocumento) {
+                    case "36":
+                        errorMsg += "NIT debe tener 14 dígitos exactos.";
+                        break;
+                    case "13":
+                        errorMsg += "DUI debe tener 9 dígitos exactos.";
+                        break;
+                    case "03":
+                        errorMsg += "Pasaporte debe tener entre 6 y 20 caracteres alfanuméricos.";
+                        break;
+                    case "02":
+                        errorMsg += "Carnet de Residencia debe comenzar con RT o RP seguido de 7 dígitos.";
+                        break;
+                    default:
+                        errorMsg += "Documento no válido para el tipo seleccionado.";
+                }
+            }
+            setErrorMessage(errorMsg);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Validar correo
+        if (!validateCorreo(formData.correo)) {
+            setErrorMessage(`El correo no puede exceder los ${LIMITES.CORREO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Validar teléfono
+        if (!validateTelefono(formData.telefono)) {
+            setErrorMessage("Formato de teléfono inválido. Use 8 dígitos exactos.");
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Validar complemento
+        if (!validateComplemento(formData.complemento)) {
+            setErrorMessage(`El complemento no puede exceder los ${LIMITES.COMPLEMENTO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+
         const dataToSend = {
             ...formData,
             departamento: selectedDepartamento,
@@ -290,24 +382,63 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
     const handleUpdatePersona = async (e) => {
         e.preventDefault();
 
-        // Validaciones
-        if (!validateDocumento(formData.documento)) {
-            setErrorMessage("Formato de documento inválido.");
-            setShowErrorModal(true);
-            return;
-        }
-        if (!validateTelefono(formData.telefono)) {
-            setErrorMessage("Formato de teléfono inválido. Use el formato ####-####.");
-            setShowErrorModal(true);
-            return;
-        }
-        if (!validateComplemento(formData.complemento)) {
-            setErrorMessage("El compleneto no puede exceder los 60 caracteres.");
+        // Validar nombre
+        if (!validateNombre(formData.nombre)) {
+            setErrorMessage(`El nombre no puede exceder los ${LIMITES.NOMBRE} caracteres.`);
             setShowErrorModal(true);
             return;
         }
 
-        // Preparar los datos para enviar al endpoint
+        // Validar documento
+        if (!validateDocumento(formData.documento, formData.tipodocumento)) {
+            let errorMsg = "";
+            if (formData.documento.length > LIMITES.DOCUMENTO) {
+                errorMsg = `El documento no puede exceder los ${LIMITES.DOCUMENTO} caracteres.`;
+            } else {
+                errorMsg = "Formato de documento inválido. ";
+                switch(formData.tipodocumento) {
+                    case "36":
+                        errorMsg += "NIT debe tener 14 dígitos exactos.";
+                        break;
+                    case "13":
+                        errorMsg += "DUI debe tener 9 dígitos exactos.";
+                        break;
+                    case "03":
+                        errorMsg += "Pasaporte debe tener entre 6 y 20 caracteres alfanuméricos.";
+                        break;
+                    case "02":
+                        errorMsg += "Carnet de Residencia debe comenzar con RT o RP seguido de 7 dígitos.";
+                        break;
+                    default:
+                        errorMsg += "Documento no válido para el tipo seleccionado.";
+                }
+            }
+            setErrorMessage(errorMsg);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Validar correo
+        if (!validateCorreo(formData.correo)) {
+            setErrorMessage(`El correo no puede exceder los ${LIMITES.CORREO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Validar teléfono
+        if (!validateTelefono(formData.telefono)) {
+            setErrorMessage("Formato de teléfono inválido. Use 8 dígitos exactos.");
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Validar complemento
+        if (!validateComplemento(formData.complemento)) {
+            setErrorMessage(`El complemento no puede exceder los ${LIMITES.COMPLEMENTO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+
         const dataToSend = {
             ...formData,
             departamento: selectedDepartamento,
@@ -380,37 +511,72 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
         }
     };
 
-    const validateDocumento = (documento) => {
-        const documentoRegex = /^\d{9}$/; // Ajusta según el formato del documento
-        return documentoRegex.test(documento);
-    };
-
-    const validateTelefono = (telefono) => {
-        const telefonoRegex = /^\d{4}\d{4}$/;
-        return telefonoRegex.test(telefono);
-    };
-
-    const validateComplemento = (complemento) => {
-        return complemento.length <= 60;
+    const handleNombreChange = (e) => {
+        const { value } = e.target;
+        if (value.length <= LIMITES.NOMBRE) {
+            setFormData({ ...formData, nombre: value });
+            setNombreError("");
+        } else {
+            setNombreError(`El nombre no puede exceder los ${LIMITES.NOMBRE} caracteres.`);
+        }
     };
 
     const handleDocumentoChange = (e) => {
         const { value } = e.target;
+        
+        if (value.length > LIMITES.DOCUMENTO) {
+            setDocumentoError(`El documento no puede exceder los ${LIMITES.DOCUMENTO} caracteres.`);
+            return;
+        }
+
         setFormData({ ...formData, documento: value });
 
-        if (!validateDocumento(value)) {
-            setDocumentoError("Formato de documento inválido.");
+        if (formData.tipodocumento && !validateDocumento(value, formData.tipodocumento)) {
+            let errorMsg = "";
+            switch(formData.tipodocumento) {
+                case "36":
+                    errorMsg = "NIT debe tener 14 dígitos exactos.";
+                    break;
+                case "13":
+                    errorMsg = "DUI debe tener 9 dígitos exactos.";
+                    break;
+                case "03":
+                    errorMsg = "Pasaporte debe tener entre 6 y 20 caracteres alfanuméricos.";
+                    break;
+                case "02":
+                    errorMsg = "Carnet de Residencia debe comenzar con RT o RP seguido de 7 dígitos.";
+                    break;
+                default:
+                    errorMsg = "Documento no válido para el tipo seleccionado.";
+            }
+            setDocumentoError(errorMsg);
         } else {
             setDocumentoError("");
         }
     };
 
+    const handleCorreoChange = (e) => {
+        const { value } = e.target;
+        if (value.length <= LIMITES.CORREO) {
+            setFormData({ ...formData, correo: value });
+            setCorreoError("");
+        } else {
+            setCorreoError(`El correo no puede exceder los ${LIMITES.CORREO} caracteres.`);
+        }
+    };
+
     const handleTelefonoChange = (e) => {
         const { value } = e.target;
+        
+        if (value.length > LIMITES.TELEFONO) {
+            setTelefonoError("El teléfono no puede exceder los 8 dígitos.");
+            return;
+        }
+
         setFormData({ ...formData, telefono: value });
 
         if (!validateTelefono(value)) {
-            setTelefonoError("Formato de teléfono inválido. Use el formato ########.");
+            setTelefonoError("Formato de teléfono inválido. Use 8 dígitos exactos.");
         } else {
             setTelefonoError("");
         }
@@ -418,12 +584,11 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
 
     const handleComplementoChange = (e) => {
         const { value } = e.target;
-        setFormData({ ...formData, complemento: value });
-
-        if (!validateComplemento(value)) {
-            setComplementoError("El complemento no puede exceder los 60 caracteres.");
-        } else {
+        if (value.length <= LIMITES.COMPLEMENTO) {
+            setFormData({ ...formData, complemento: value });
             setComplementoError("");
+        } else {
+            setComplementoError(`El complemento no puede exceder los ${LIMITES.COMPLEMENTO} caracteres.`);
         }
     };
 
@@ -444,9 +609,7 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
     };
 
     return (
-       
         <div className="flex flex-col h-screen bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden">
-            {/* Sidebar y Header */}
             {isMobile && sidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-50 z-30"
@@ -552,7 +715,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                                         {getNombreTipoDocumento(persona.tipodocumento)}
                                                     </td>
                                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{persona.documento}</td>
-                                                 
                                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{persona.correo}</td>
                                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{persona.telefono}</td>
                                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{persona.complemento}</td>
@@ -621,7 +783,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                                 <span className="text-sm font-medium text-gray-500">Documento:</span>
                                                 <span className="text-sm text-gray-900">{persona.documento}</span>
                                             </div>
-                                            
                                             <div className="flex justify-between">
                                                 <span className="text-sm font-medium text-gray-500">Correo:</span>
                                                 <span className="text-sm text-gray-900">{persona.correo}</span>
@@ -657,7 +818,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                 </div>
             </div>
 
-            {/* Modales */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
@@ -689,10 +849,11 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         id="nombre"
                                         name="nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
                                     />
+                                    {nombreError && <p className="text-red-500 text-sm mt-1">{nombreError}</p>}
                                 </div>
 
                                 <div className="mb-4">
@@ -732,8 +893,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                     {documentoError && <p className="text-red-500 text-sm mt-1">{documentoError}</p>}
                                 </div>
 
-                               
-
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="correo">
                                         Correo Electrónico
@@ -743,10 +902,11 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         id="correo"
                                         name="correo"
                                         value={formData.correo}
-                                        onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                                        onChange={handleCorreoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
                                     />
+                                    {correoError && <p className="text-red-500 text-sm mt-1">{correoError}</p>}
                                 </div>
 
                                 <div className="mb-4">
@@ -881,10 +1041,11 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         id="nombre"
                                         name="nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
                                     />
+                                    {nombreError && <p className="text-red-500 text-sm mt-1">{nombreError}</p>}
                                 </div>
 
                                 <div className="mb-4">
@@ -924,7 +1085,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                     {documentoError && <p className="text-red-500 text-sm mt-1">{documentoError}</p>}
                                 </div>
 
-
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="correo">
                                         Correo Electrónico
@@ -934,10 +1094,11 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         id="correo"
                                         name="correo"
                                         value={formData.correo}
-                                        onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                                        onChange={handleCorreoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
                                     />
+                                    {correoError && <p className="text-red-500 text-sm mt-1">{correoError}</p>}
                                 </div>
 
                                 <div className="mb-4">
