@@ -28,7 +28,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
         nombre: "",
         tipodocumento: "",
         documento: "",
-        codactividad: "",
         correo: "",
         telefono: "",
         complemento: "",
@@ -125,12 +124,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
         { codigo: "20", nombre: "LA UNION SUR", departamento: "14" }
     ];
 
-    const actividadesEconomicas = [
-        { codigo: "001", nombre: "Agricultura" },
-        { codigo: "002", nombre: "Manufactura" },
-        { codigo: "003", nombre: "Comercio" },
-    ];
-
     useEffect(() => {
         if (selectedDepartamento) {
             const filtrados = municipios.filter(m => m.departamento === selectedDepartamento);
@@ -150,11 +143,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
             muni => muni.codigo === codigoMunicipio && muni.departamento === codigoDepartamento
         );
         return municipio ? municipio.nombre : "Desconocido";
-    };
-
-    const getNombreActividadEconomica = (codigo) => {
-        const actividad = actividadesEconomicas.find(act => act.codigo === codigo);
-        return actividad ? actividad.nombre : "Desconocido";
     };
 
     const getNombreTipoDocumento = (codigo) => {
@@ -361,7 +349,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                     nombre: "",
                     tipodocumento: "",
                     documento: "",
-                    codactividad: "",
                     correo: "",
                     telefono: "",
                     complemento: "",
@@ -470,7 +457,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                     nombre: "",
                     tipodocumento: "",
                     documento: "",
-                    codactividad: "",
                     correo: "",
                     telefono: "",
                     complemento: "",
@@ -513,25 +499,27 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
 
     const handleNombreChange = (e) => {
         const { value } = e.target;
-        if (value.length <= LIMITES.NOMBRE) {
-            setFormData({ ...formData, nombre: value });
-            setNombreError("");
-        } else {
+        const nombreValue = value.slice(0, LIMITES.NOMBRE);
+        setFormData({ ...formData, nombre: nombreValue });
+        
+        if (!validateNombre(nombreValue)) {
             setNombreError(`El nombre no puede exceder los ${LIMITES.NOMBRE} caracteres.`);
+        } else {
+            setNombreError("");
         }
     };
 
     const handleDocumentoChange = (e) => {
         const { value } = e.target;
-        
-        if (value.length > LIMITES.DOCUMENTO) {
+        const documentoValue = value.slice(0, LIMITES.DOCUMENTO);
+        setFormData({ ...formData, documento: documentoValue });
+
+        if (documentoValue.length > LIMITES.DOCUMENTO) {
             setDocumentoError(`El documento no puede exceder los ${LIMITES.DOCUMENTO} caracteres.`);
             return;
         }
 
-        setFormData({ ...formData, documento: value });
-
-        if (formData.tipodocumento && !validateDocumento(value, formData.tipodocumento)) {
+        if (formData.tipodocumento && !validateDocumento(documentoValue, formData.tipodocumento)) {
             let errorMsg = "";
             switch(formData.tipodocumento) {
                 case "36":
@@ -557,25 +545,27 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
 
     const handleCorreoChange = (e) => {
         const { value } = e.target;
-        if (value.length <= LIMITES.CORREO) {
-            setFormData({ ...formData, correo: value });
-            setCorreoError("");
-        } else {
+        const correoValue = value.slice(0, LIMITES.CORREO);
+        setFormData({ ...formData, correo: correoValue });
+        
+        if (!validateCorreo(correoValue)) {
             setCorreoError(`El correo no puede exceder los ${LIMITES.CORREO} caracteres.`);
+        } else {
+            setCorreoError("");
         }
     };
 
     const handleTelefonoChange = (e) => {
         const { value } = e.target;
-        
-        if (value.length > LIMITES.TELEFONO) {
+        const telefonoValue = value.slice(0, LIMITES.TELEFONO);
+        setFormData({ ...formData, telefono: telefonoValue });
+
+        if (telefonoValue.length > LIMITES.TELEFONO) {
             setTelefonoError("El teléfono no puede exceder los 8 dígitos.");
             return;
         }
 
-        setFormData({ ...formData, telefono: value });
-
-        if (!validateTelefono(value)) {
+        if (!validateTelefono(telefonoValue)) {
             setTelefonoError("Formato de teléfono inválido. Use 8 dígitos exactos.");
         } else {
             setTelefonoError("");
@@ -584,11 +574,13 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
 
     const handleComplementoChange = (e) => {
         const { value } = e.target;
-        if (value.length <= LIMITES.COMPLEMENTO) {
-            setFormData({ ...formData, complemento: value });
-            setComplementoError("");
-        } else {
+        const complementoValue = value.slice(0, LIMITES.COMPLEMENTO);
+        setFormData({ ...formData, complemento: complementoValue });
+        
+        if (!validateComplemento(complementoValue)) {
             setComplementoError(`El complemento no puede exceder los ${LIMITES.COMPLEMENTO} caracteres.`);
+        } else {
+            setComplementoError("");
         }
     };
 
@@ -852,8 +844,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE}
                                     />
                                     {nombreError && <p className="text-red-500 text-sm mt-1">{nombreError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombre.length}/{LIMITES.NOMBRE} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -889,8 +883,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleDocumentoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.DOCUMENTO}
                                     />
                                     {documentoError && <p className="text-red-500 text-sm mt-1">{documentoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.documento.length}/{LIMITES.DOCUMENTO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -905,8 +901,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleCorreoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.CORREO}
                                     />
                                     {correoError && <p className="text-red-500 text-sm mt-1">{correoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.correo.length}/{LIMITES.CORREO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -921,8 +919,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleTelefonoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.TELEFONO}
                                     />
                                     {telefonoError && <p className="text-red-500 text-sm mt-1">{telefonoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.telefono.length}/{LIMITES.TELEFONO} dígitos</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -978,9 +978,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         value={formData.complemento}
                                         onChange={handleComplementoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        required
+                                        maxLength={LIMITES.COMPLEMENTO}
                                     />
                                     {complementoError && <p className="text-red-500 text-sm mt-1">{complementoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.complemento.length}/{LIMITES.COMPLEMENTO} caracteres</p>
                                 </div>
 
                                 <div className="flex justify-end gap-3 mt-6">
@@ -1044,8 +1045,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE}
                                     />
                                     {nombreError && <p className="text-red-500 text-sm mt-1">{nombreError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombre.length}/{LIMITES.NOMBRE} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1081,8 +1084,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleDocumentoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.DOCUMENTO}
                                     />
                                     {documentoError && <p className="text-red-500 text-sm mt-1">{documentoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.documento.length}/{LIMITES.DOCUMENTO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1097,8 +1102,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleCorreoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.CORREO}
                                     />
                                     {correoError && <p className="text-red-500 text-sm mt-1">{correoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.correo.length}/{LIMITES.CORREO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1113,8 +1120,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         onChange={handleTelefonoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.TELEFONO}
                                     />
                                     {telefonoError && <p className="text-red-500 text-sm mt-1">{telefonoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.telefono.length}/{LIMITES.TELEFONO} dígitos</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1170,9 +1179,10 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                         value={formData.complemento}
                                         onChange={handleComplementoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        required
+                                        maxLength={LIMITES.COMPLEMENTO}
                                     />
                                     {complementoError && <p className="text-red-500 text-sm mt-1">{complementoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.complemento.length}/{LIMITES.COMPLEMENTO} caracteres</p>
                                 </div>
 
                                 <div className="flex justify-end gap-3 mt-6">
@@ -1276,7 +1286,6 @@ export default function PersonaNatural({ initialPersonas = [], user }) {
                                             nombre: "",
                                             tipodocumento: "",
                                             documento: "",
-                                            codactividad: "",
                                             correo: "",
                                             telefono: "",
                                             complemento: "",

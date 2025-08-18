@@ -4,8 +4,20 @@ import { FaSearch, FaBars, FaBuilding, FaPlus, FaTimes, FaEdit, FaTrash, FaUserP
 import Sidebar from "../components/sidebar";
 import Footer from "../components/footer";
 import { useRouter } from "next/navigation";
-import Select from "react-select"; // Importa react-select
+import Select from "react-select";
 
+// Definición de límites para los campos
+const LIMITES = {
+    NOMBRE: 100,
+    NIT: 14,
+    NRC: 8,
+    GIRO: 100,
+    CORREO: 100,
+    TELEFONO: 8,
+    COMPLEMENTO: 100,
+    NOMBRE_COMERCIAL: 100,
+    COD_ACTIVIDAD: 6
+};
 
 export default function PersonaJuridica({ initialEmpresas = [], user }) {
     const router = useRouter();
@@ -40,13 +52,12 @@ export default function PersonaJuridica({ initialEmpresas = [], user }) {
     });
     const [clientToDelete, setClientToDelete] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-
     const [selectedDepartamento, setSelectedDepartamento] = useState("");
     const [selectedMunicipio, setSelectedMunicipio] = useState("");
     const [municipiosFiltrados, setMunicipiosFiltrados] = useState([]);
 
-  // Lista de códigos de actividad
-  const codactividad = [
+    // Lista de códigos de actividad
+    const codactividad = [
     { codigo: "01111", nombre: "Cultivo de cereales excepto arroz y para forrajes" },
     { codigo: "01112", nombre: "Cultivo de legumbres" },
     { codigo: "01113", nombre: "Cultivo de semillas oleaginosas" },
@@ -821,29 +832,30 @@ export default function PersonaJuridica({ initialEmpresas = [], user }) {
     { codigo: "10005", nombre: "Otros" },
     { codigo: "10006", nombre: "Comerciante" },
 ];
-// Convertir la lista de códigos de actividad al formato que react-select necesita
-const optionsCodActividad = codactividad.map(act => ({
-    value: act.codigo,
-    label: `${act.codigo} - ${act.nombre}`,
-}));
+    
+    // Convertir la lista de códigos de actividad al formato que react-select necesita
+    const optionsCodActividad = codactividad.map(act => ({
+        value: act.codigo,
+        label: `${act.codigo} - ${act.nombre}`,
+    }));
 
-// Función para manejar el cambio en el código de actividad
-const handleCodActividadChange = (selectedOption) => {
-    if (selectedOption) {
-        const actividadSeleccionada = codactividad.find(act => act.codigo === selectedOption.value);
-        setFormData({
-            ...formData,
-            codactividad: selectedOption.value,
-            giro: actividadSeleccionada ? actividadSeleccionada.nombre : "",
-        });
-    } else {
-        setFormData({
-            ...formData,
-            codactividad: "",
-            giro: "",
-        });
-    }
-};
+    // Función para manejar el cambio en el código de actividad
+    const handleCodActividadChange = (selectedOption) => {
+        if (selectedOption) {
+            const actividadSeleccionada = codactividad.find(act => act.codigo === selectedOption.value);
+            setFormData({
+                ...formData,
+                codactividad: selectedOption.value,
+                giro: actividadSeleccionada ? actividadSeleccionada.nombre : "",
+            });
+        } else {
+            setFormData({
+                ...formData,
+                codactividad: "",
+                giro: "",
+            });
+        }
+    };
 
     const departamentos = [
         { codigo: "00", nombre: "Otro (Para extranjeros)" },
@@ -1000,24 +1012,51 @@ const handleCodActividadChange = (selectedOption) => {
     const handleSaveNewClient = async (e) => {
         e.preventDefault();
 
-        // Validaciones existentes (NIT, NRC, teléfono, complemento)
+        // Validaciones con límites definidos
+        if (formData.nombre.length > LIMITES.NOMBRE) {
+            setErrorMessage(`El nombre no puede exceder ${LIMITES.NOMBRE} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
         if (!validateNIT(formData.nit)) {
-            setErrorMessage("Formato de NIT inválido. Use el formato ##############.");
+            setErrorMessage(`Formato de NIT inválido. Debe tener exactamente ${LIMITES.NIT} dígitos.`);
             setShowErrorModal(true);
             return;
         }
+        
         if (!validateNRC(formData.nrc)) {
-            setErrorMessage("Formato de NRC inválido. Use el formato ########.");
+            setErrorMessage(`Formato de NRC inválido. Debe tener exactamente ${LIMITES.NRC} dígitos.`);
             setShowErrorModal(true);
             return;
         }
+        
+        if (formData.giro.length > LIMITES.GIRO) {
+            setErrorMessage(`El giro no puede exceder ${LIMITES.GIRO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
+        if (formData.correo.length > LIMITES.CORREO) {
+            setErrorMessage(`El correo no puede exceder ${LIMITES.CORREO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
         if (!validateTelefono(formData.telefono)) {
-            setErrorMessage("Formato de teléfono inválido. Use el formato ########.");
+            setErrorMessage(`Formato de teléfono inválido. Debe tener exactamente ${LIMITES.TELEFONO} dígitos.`);
             setShowErrorModal(true);
             return;
         }
-        if (!validateComplemento(formData.complemento)) {
-            setErrorMessage("El complemento no puede exceder los 60 caracteres.");
+        
+        if (formData.complemento.length > LIMITES.COMPLEMENTO) {
+            setErrorMessage(`El complemento no puede exceder ${LIMITES.COMPLEMENTO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
+        if (formData.nombrecomercial.length > LIMITES.NOMBRE_COMERCIAL) {
+            setErrorMessage(`El nombre comercial no puede exceder ${LIMITES.NOMBRE_COMERCIAL} caracteres.`);
             setShowErrorModal(true);
             return;
         }
@@ -1025,8 +1064,8 @@ const handleCodActividadChange = (selectedOption) => {
         // Preparar los datos para enviar al endpoint
         const dataToSend = {
             ...formData,
-            departamento: selectedDepartamento, // Código del departamento seleccionado
-            municipio: selectedMunicipio,       // Código del municipio seleccionado
+            departamento: selectedDepartamento,
+            municipio: selectedMunicipio,
         };
 
         try {
@@ -1037,7 +1076,7 @@ const handleCodActividadChange = (selectedOption) => {
                     Cookie: document.cookie,
                 },
                 credentials: "include",
-                body: JSON.stringify(dataToSend), // Enviar los datos al endpoint
+                body: JSON.stringify(dataToSend),
             });
 
             if (!response.ok) {
@@ -1066,7 +1105,7 @@ const handleCodActividadChange = (selectedOption) => {
                 });
                 setSelectedDepartamento("");
                 setSelectedMunicipio("");
-                fetchEmpresas(); // Actualizar la lista de empresas
+                fetchEmpresas();
             }
         } catch (error) {
             console.error("Error al agregar la empresa:", error);
@@ -1078,24 +1117,51 @@ const handleCodActividadChange = (selectedOption) => {
     const handleUpdateClient = async (e) => {
         e.preventDefault();
 
-        // Validaciones existentes (NIT, NRC, teléfono, complemento)
+        // Validaciones con límites definidos
+        if (formData.nombre.length > LIMITES.NOMBRE) {
+            setErrorMessage(`El nombre no puede exceder ${LIMITES.NOMBRE} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
         if (!validateNIT(formData.nit)) {
-            setErrorMessage("Formato de NIT inválido. Use el formato ##############.");
+            setErrorMessage(`Formato de NIT inválido. Debe tener exactamente ${LIMITES.NIT} dígitos.`);
             setShowErrorModal(true);
             return;
         }
+        
         if (!validateNRC(formData.nrc)) {
-            setErrorMessage("Formato de NRC inválido. Use el formato ########.");
+            setErrorMessage(`Formato de NRC inválido. Debe tener exactamente ${LIMITES.NRC} dígitos.`);
             setShowErrorModal(true);
             return;
         }
+        
+        if (formData.giro.length > LIMITES.GIRO) {
+            setErrorMessage(`El giro no puede exceder ${LIMITES.GIRO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
+        if (formData.correo.length > LIMITES.CORREO) {
+            setErrorMessage(`El correo no puede exceder ${LIMITES.CORREO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
         if (!validateTelefono(formData.telefono)) {
-            setErrorMessage("Formato de teléfono inválido. Use el formato ####-####.");
+            setErrorMessage(`Formato de teléfono inválido. Debe tener exactamente ${LIMITES.TELEFONO} dígitos.`);
             setShowErrorModal(true);
             return;
         }
-        if (!validateComplemento(formData.complemento)) {
-            setErrorMessage("El complemento no puede exceder los 60 caracteres.");
+        
+        if (formData.complemento.length > LIMITES.COMPLEMENTO) {
+            setErrorMessage(`El complemento no puede exceder ${LIMITES.COMPLEMENTO} caracteres.`);
+            setShowErrorModal(true);
+            return;
+        }
+        
+        if (formData.nombrecomercial.length > LIMITES.NOMBRE_COMERCIAL) {
+            setErrorMessage(`El nombre comercial no puede exceder ${LIMITES.NOMBRE_COMERCIAL} caracteres.`);
             setShowErrorModal(true);
             return;
         }
@@ -1103,8 +1169,8 @@ const handleCodActividadChange = (selectedOption) => {
         // Preparar los datos para enviar al endpoint
         const dataToSend = {
             ...formData,
-            departamento: selectedDepartamento, // Código del departamento seleccionado
-            municipio: selectedMunicipio,       // Código del municipio seleccionado
+            departamento: selectedDepartamento,
+            municipio: selectedMunicipio,
         };
 
         try {
@@ -1115,7 +1181,7 @@ const handleCodActividadChange = (selectedOption) => {
                     Cookie: document.cookie,
                 },
                 credentials: "include",
-                body: JSON.stringify(dataToSend), // Enviar los datos al endpoint
+                body: JSON.stringify(dataToSend),
             });
 
             if (!response.ok) {
@@ -1144,7 +1210,7 @@ const handleCodActividadChange = (selectedOption) => {
                 });
                 setSelectedDepartamento("");
                 setSelectedMunicipio("");
-                fetchEmpresas(); // Actualizar la lista de empresas
+                fetchEmpresas();
             }
         } catch (error) {
             console.error("Error al actualizar la empresa:", error);
@@ -1174,30 +1240,32 @@ const handleCodActividadChange = (selectedOption) => {
     };
 
     const validateNIT = (nit) => {
-        const nitRegex = /^\d{4}\d{6}\d{3}\d{1}$/;
+        const nitRegex = new RegExp(`^\\d{${LIMITES.NIT}}$`);
         return nitRegex.test(nit);
     };
 
     const validateNRC = (nrc) => {
-        const nrcRegex = /^\d{7}\d{1}$/;
+        const nrcRegex = new RegExp(`^\\d{${LIMITES.NRC}}$`);
         return nrcRegex.test(nrc);
     };
 
     const validateTelefono = (telefono) => {
-        const telefonoRegex = /^\d{4}\d{4}$/;
+        const telefonoRegex = new RegExp(`^\\d{${LIMITES.TELEFONO}}$`);
         return telefonoRegex.test(telefono);
     };
 
     const validateComplemento = (complemento) => {
-        return complemento.length <= 60;
+        return complemento.length <= LIMITES.COMPLEMENTO;
     };
 
     const handleNITChange = (e) => {
         const { value } = e.target;
-        setFormData({ ...formData, nit: value });
+        // Limitar la longitud del NIT según el límite definido
+        const nitValue = value.slice(0, LIMITES.NIT);
+        setFormData({ ...formData, nit: nitValue });
 
-        if (!validateNIT(value)) {
-            setNitError("Formato de NIT inválido. Use el formato ##############.");
+        if (!validateNIT(nitValue)) {
+            setNitError(`El NIT debe tener exactamente ${LIMITES.NIT} dígitos.`);
         } else {
             setNitError("");
         }
@@ -1205,10 +1273,12 @@ const handleCodActividadChange = (selectedOption) => {
 
     const handleNRCChange = (e) => {
         const { value } = e.target;
-        setFormData({ ...formData, nrc: value });
+        // Limitar la longitud del NRC según el límite definido
+        const nrcValue = value.slice(0, LIMITES.NRC);
+        setFormData({ ...formData, nrc: nrcValue });
 
-        if (!validateNRC(value)) {
-            setNrcError("Formato de NRC inválido. Use el formato ########.");
+        if (!validateNRC(nrcValue)) {
+            setNrcError(`El NRC debe tener exactamente ${LIMITES.NRC} dígitos.`);
         } else {
             setNrcError("");
         }
@@ -1216,10 +1286,12 @@ const handleCodActividadChange = (selectedOption) => {
 
     const handleTelefonoChange = (e) => {
         const { value } = e.target;
-        setFormData({ ...formData, telefono: value });
+        // Limitar la longitud del teléfono según el límite definido
+        const telefonoValue = value.slice(0, LIMITES.TELEFONO);
+        setFormData({ ...formData, telefono: telefonoValue });
 
-        if (!validateTelefono(value)) {
-            setTelefonoError("Formato de teléfono inválido. Use el formato ########.");
+        if (!validateTelefono(telefonoValue)) {
+            setTelefonoError(`El teléfono debe tener exactamente ${LIMITES.TELEFONO} dígitos.`);
         } else {
             setTelefonoError("");
         }
@@ -1227,19 +1299,49 @@ const handleCodActividadChange = (selectedOption) => {
 
     const handleComplementoChange = (e) => {
         const { value } = e.target;
-        setFormData({ ...formData, complemento: value });
+        // Limitar la longitud del complemento según el límite definido
+        const complementoValue = value.slice(0, LIMITES.COMPLEMENTO);
+        setFormData({ ...formData, complemento: complementoValue });
 
-        if (!validateComplemento(value)) {
-            setComplementoError("El complemento no puede exceder los 60 caracteres.");
+        if (!validateComplemento(complementoValue)) {
+            setComplementoError(`El complemento no puede exceder ${LIMITES.COMPLEMENTO} caracteres.`);
         } else {
             setComplementoError("");
         }
     };
 
+    const handleNombreChange = (e) => {
+        const { value } = e.target;
+        // Limitar la longitud del nombre según el límite definido
+        const nombreValue = value.slice(0, LIMITES.NOMBRE);
+        setFormData({ ...formData, nombre: nombreValue });
+    };
+
+    const handleGiroChange = (e) => {
+        const { value } = e.target;
+        // Limitar la longitud del giro según el límite definido
+        const giroValue = value.slice(0, LIMITES.GIRO);
+        setFormData({ ...formData, giro: giroValue });
+    };
+
+    const handleCorreoChange = (e) => {
+        const { value } = e.target;
+        // Limitar la longitud del correo según el límite definido
+        const correoValue = value.slice(0, LIMITES.CORREO);
+        setFormData({ ...formData, correo: correoValue });
+    };
+
+    const handleNombreComercialChange = (e) => {
+        const { value } = e.target;
+        // Limitar la longitud del nombre comercial según el límite definido
+        const nombreComercialValue = value.slice(0, LIMITES.NOMBRE_COMERCIAL);
+        setFormData({ ...formData, nombrecomercial: nombreComercialValue });
+    };
+
     const handleEditClick = (empresa) => {
         setFormData(empresa);
-        setSelectedDepartamento(empresa.departamento); // Establecer el departamento seleccionado
-        setSelectedMunicipio(empresa.municipio);       // Establecer el municipio seleccionado
+        setSelectedDepartamento(empresa.departamento);
+        setSelectedMunicipio(empresa.municipio);
         setShowEditModal(true);
     };
 
@@ -1578,7 +1680,6 @@ const handleCodActividadChange = (selectedOption) => {
 
                         <div className="px-6 py-4">
                             <form onSubmit={handleSaveNewClient}>
-                                {/* Campos existentes */}
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nombre">
                                         Nombre de la Persona Jurídica
@@ -1588,15 +1689,17 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="nombre"
                                         name="nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombre.length}/{LIMITES.NOMBRE} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nit">
-                                        NIT
+                                        NIT (14 dígitos)
                                     </label>
                                     <input
                                         type="text"
@@ -1606,13 +1709,15 @@ const handleCodActividadChange = (selectedOption) => {
                                         onChange={handleNITChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NIT}
                                     />
                                     {nitError && <p className="text-red-500 text-sm mt-1">{nitError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nit.length}/{LIMITES.NIT} dígitos</p>
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nrc">
-                                        NRC
+                                        NRC (8 dígitos)
                                     </label>
                                     <input
                                         type="text"
@@ -1622,27 +1727,29 @@ const handleCodActividadChange = (selectedOption) => {
                                         onChange={handleNRCChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NRC}
                                     />
                                     {nrcError && <p className="text-red-500 text-sm mt-1">{nrcError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nrc.length}/{LIMITES.NRC} dígitos</p>
                                 </div>
 
-                                 {/* Dropdown de Código de Actividad con react-select */}
-                                 <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="codactividad">
-                                                    Código de Actividad
-                                                </label>
-                                                <Select
-                                                    id="codactividad"
-                                                    name="codactividad"
-                                                    options={optionsCodActividad}
-                                                    value={optionsCodActividad.find(opt => opt.value === formData.codactividad)}
-                                                    onChange={handleCodActividadChange}
-                                                    placeholder="Seleccione un código de actividad"
-                                                    isSearchable
-                                                    noOptionsMessage={() => "No se encontraron resultados"}
-                                                    className="text-black"
-                                                />
-                                            </div>
+                                {/* Dropdown de Código de Actividad con react-select */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="codactividad">
+                                        Código de Actividad
+                                    </label>
+                                    <Select
+                                        id="codactividad"
+                                        name="codactividad"
+                                        options={optionsCodActividad}
+                                        value={optionsCodActividad.find(opt => opt.value === formData.codactividad)}
+                                        onChange={handleCodActividadChange}
+                                        placeholder="Seleccione un código de actividad"
+                                        isSearchable
+                                        noOptionsMessage={() => "No se encontraron resultados"}
+                                        className="text-black"
+                                    />
+                                </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="giro">
@@ -1653,10 +1760,12 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="giro"
                                         name="giro"
                                         value={formData.giro}
-                                        onChange={(e) => setFormData({ ...formData, giro: e.target.value })}
+                                        onChange={handleGiroChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.GIRO}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.giro.length}/{LIMITES.GIRO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1668,15 +1777,17 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="correo"
                                         name="correo"
                                         value={formData.correo}
-                                        onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                                        onChange={handleCorreoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.CORREO}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.correo.length}/{LIMITES.CORREO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="telefono">
-                                        Teléfono
+                                        Teléfono (8 dígitos)
                                     </label>
                                     <input
                                         type="tel"
@@ -1686,14 +1797,12 @@ const handleCodActividadChange = (selectedOption) => {
                                         onChange={handleTelefonoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.TELEFONO}
                                     />
                                     {telefonoError && <p className="text-red-500 text-sm mt-1">{telefonoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.telefono.length}/{LIMITES.TELEFONO} dígitos</p>
                                 </div>
 
-                                
-
-                                
-                                           
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nombrecomercial">
                                         Nombre Comercial
@@ -1703,10 +1812,12 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="nombrecomercial"
                                         name="nombrecomercial"
                                         value={formData.nombrecomercial}
-                                        onChange={(e) => setFormData({ ...formData, nombrecomercial: e.target.value })}
+                                        onChange={handleNombreComercialChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE_COMERCIAL}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombrecomercial.length}/{LIMITES.NOMBRE_COMERCIAL} caracteres</p>
                                 </div>
 
                                 {/* Dropdown de Departamentos */}
@@ -1753,7 +1864,6 @@ const handleCodActividadChange = (selectedOption) => {
                                     </select>
                                 </div>
 
-                                {/* Nuevos campos */}
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="complemento">
                                         Complemento
@@ -1765,8 +1875,10 @@ const handleCodActividadChange = (selectedOption) => {
                                         value={formData.complemento}
                                         onChange={handleComplementoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        maxLength={LIMITES.COMPLEMENTO}
                                     />
                                     {complementoError && <p className="text-red-500 text-sm mt-1">{complementoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.complemento.length}/{LIMITES.COMPLEMENTO} caracteres</p>
                                 </div>
 
                                 <div className="flex justify-end gap-3 mt-6">
@@ -1818,7 +1930,6 @@ const handleCodActividadChange = (selectedOption) => {
 
                         <div className="px-6 py-4">
                             <form onSubmit={handleUpdateClient}>
-                                {/* Campos existentes */}
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nombre">
                                         Nombre de la Persona Jurídica
@@ -1828,15 +1939,17 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="nombre"
                                         name="nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombre.length}/{LIMITES.NOMBRE} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nit">
-                                        NIT
+                                        NIT (14 dígitos)
                                     </label>
                                     <input
                                         type="text"
@@ -1846,13 +1959,15 @@ const handleCodActividadChange = (selectedOption) => {
                                         onChange={handleNITChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NIT}
                                     />
                                     {nitError && <p className="text-red-500 text-sm mt-1">{nitError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nit.length}/{LIMITES.NIT} dígitos</p>
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nrc">
-                                        NRC
+                                        NRC (8 dígitos)
                                     </label>
                                     <input
                                         type="text"
@@ -1862,28 +1977,29 @@ const handleCodActividadChange = (selectedOption) => {
                                         onChange={handleNRCChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NRC}
                                     />
                                     {nrcError && <p className="text-red-500 text-sm mt-1">{nrcError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nrc.length}/{LIMITES.NRC} dígitos</p>
                                 </div>
 
-                                
-                                            {/* Dropdown de Código de Actividad con react-select */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="codactividad">
-                                                    Código de Actividad
-                                                </label>
-                                                <Select
-                                                    id="codactividad"
-                                                    name="codactividad"
-                                                    options={optionsCodActividad}
-                                                    value={optionsCodActividad.find(opt => opt.value === formData.codactividad)}
-                                                    onChange={handleCodActividadChange}
-                                                    placeholder="Seleccione un código de actividad"
-                                                    isSearchable
-                                                    noOptionsMessage={() => "No se encontraron resultados"}
-                                                    className="text-black"
-                                                />
-                                            </div>
+                                {/* Dropdown de Código de Actividad con react-select */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="codactividad">
+                                        Código de Actividad
+                                    </label>
+                                    <Select
+                                        id="codactividad"
+                                        name="codactividad"
+                                        options={optionsCodActividad}
+                                        value={optionsCodActividad.find(opt => opt.value === formData.codactividad)}
+                                        onChange={handleCodActividadChange}
+                                        placeholder="Seleccione un código de actividad"
+                                        isSearchable
+                                        noOptionsMessage={() => "No se encontraron resultados"}
+                                        className="text-black"
+                                    />
+                                </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="giro">
@@ -1894,10 +2010,12 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="giro"
                                         name="giro"
                                         value={formData.giro}
-                                        onChange={(e) => setFormData({ ...formData, giro: e.target.value })}
+                                        onChange={handleGiroChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.GIRO}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.giro.length}/{LIMITES.GIRO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1909,15 +2027,17 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="correo"
                                         name="correo"
                                         value={formData.correo}
-                                        onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                                        onChange={handleCorreoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.CORREO}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.correo.length}/{LIMITES.CORREO} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="telefono">
-                                        Teléfono
+                                        Teléfono (8 dígitos)
                                     </label>
                                     <input
                                         type="tel"
@@ -1927,13 +2047,12 @@ const handleCodActividadChange = (selectedOption) => {
                                         onChange={handleTelefonoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.TELEFONO}
                                     />
                                     {telefonoError && <p className="text-red-500 text-sm mt-1">{telefonoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.telefono.length}/{LIMITES.TELEFONO} dígitos</p>
                                 </div>
 
-                               
-
-                                
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="nombrecomercial">
                                         Nombre Comercial
@@ -1943,10 +2062,12 @@ const handleCodActividadChange = (selectedOption) => {
                                         id="nombrecomercial"
                                         name="nombrecomercial"
                                         value={formData.nombrecomercial}
-                                        onChange={(e) => setFormData({ ...formData, nombrecomercial: e.target.value })}
+                                        onChange={handleNombreComercialChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE_COMERCIAL}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombrecomercial.length}/{LIMITES.NOMBRE_COMERCIAL} caracteres</p>
                                 </div>
 
                                 {/* Dropdown de Departamentos */}
@@ -1993,8 +2114,7 @@ const handleCodActividadChange = (selectedOption) => {
                                     </select>
                                 </div>
 
-                                 {/* Nuevos campos */}
-                                 <div className="mb-4">
+                                <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="complemento">
                                         Complemento
                                     </label>
@@ -2005,8 +2125,10 @@ const handleCodActividadChange = (selectedOption) => {
                                         value={formData.complemento}
                                         onChange={handleComplementoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        maxLength={LIMITES.COMPLEMENTO}
                                     />
                                     {complementoError && <p className="text-red-500 text-sm mt-1">{complementoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.complemento.length}/{LIMITES.COMPLEMENTO} caracteres</p>
                                 </div>
 
                                 <div className="flex justify-end gap-3 mt-6">
@@ -2095,21 +2217,18 @@ const handleCodActividadChange = (selectedOption) => {
                                 Tienes cambios sin guardar. ¿Estás seguro de que deseas cancelar?
                             </p>
                             <div className="flex justify-end gap-3">
-                                {/* Botón para continuar editando */}
                                 <button
                                     onClick={() => setShowCancelConfirmModal(false)}
                                     className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
                                 >
                                     Continuar Editando
                                 </button>
-
-                                {/* Botón para confirmar la cancelación */}
                                 <button
                                     onClick={() => {
-                                        setShowCancelConfirmModal(false); // Cerrar este modal
-                                        setShowAddModal(false);          // Cerrar el modal de agregar
-                                        setShowEditModal(false);         // Cerrar el modal de editar
-                                        setFormData({                    // Resetear el formulario
+                                        setShowCancelConfirmModal(false);
+                                        setShowAddModal(false);
+                                        setShowEditModal(false);
+                                        setFormData({
                                             nombre: "",
                                             nit: "",
                                             nrc: "",
@@ -2122,8 +2241,8 @@ const handleCodActividadChange = (selectedOption) => {
                                             departamento: "",
                                             municipio: ""
                                         });
-                                        setSelectedDepartamento("");     // Resetear el departamento seleccionado
-                                        setSelectedMunicipio("");        // Resetear el municipio seleccionado
+                                        setSelectedDepartamento("");
+                                        setSelectedMunicipio("");
                                     }}
                                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
                                 >

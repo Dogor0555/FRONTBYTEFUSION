@@ -20,6 +20,17 @@ export default function Productos({ initialProductos = [], user }) {
     const [showSearchResultsModal, setShowSearchResultsModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [nombreError, setNombreError] = useState("");
+    const [codigoError, setCodigoError] = useState("");
+    
+    // Límites de caracteres para cada campo
+    const LIMITES = {
+        NOMBRE: 100,
+        CODIGO: 20,
+        PRECIO: 10,
+        STOCK: 10
+    };
+
     const [formData, setFormData] = useState({
         nombre: "",
         codigo: "",
@@ -91,7 +102,29 @@ export default function Productos({ initialProductos = [], user }) {
         return !isNaN(value) && Number(value) >= 0;
     };
 
+    const validateNombre = (nombre) => {
+        return nombre.length <= LIMITES.NOMBRE;
+    };
+
+    const validateCodigo = (codigo) => {
+        return codigo.length <= LIMITES.CODIGO;
+    };
+
     const validateForm = () => {
+        if (!validateNombre(formData.nombre)) {
+            setNombreError(`El nombre no puede exceder los ${LIMITES.NOMBRE} caracteres.`);
+            return false;
+        } else {
+            setNombreError("");
+        }
+
+        if (!validateCodigo(formData.codigo)) {
+            setCodigoError(`El código no puede exceder los ${LIMITES.CODIGO} caracteres.`);
+            return false;
+        } else {
+            setCodigoError("");
+        }
+
         if (!validateNumber(formData.precio)) {
             setErrorMessage("El precio debe ser un número válido.");
             return false;
@@ -107,9 +140,28 @@ export default function Productos({ initialProductos = [], user }) {
         return true;
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+    const handleNombreChange = (e) => {
+        const { value } = e.target;
+        const nombreValue = value.slice(0, LIMITES.NOMBRE);
+        setFormData({ ...formData, nombre: nombreValue });
+        
+        if (!validateNombre(nombreValue)) {
+            setNombreError(`El nombre no puede exceder los ${LIMITES.NOMBRE} caracteres.`);
+        } else {
+            setNombreError("");
+        }
+    };
+
+    const handleCodigoChange = (e) => {
+        const { value } = e.target;
+        const codigoValue = value.slice(0, LIMITES.CODIGO);
+        setFormData({ ...formData, codigo: codigoValue });
+        
+        if (!validateCodigo(codigoValue)) {
+            setCodigoError(`El código no puede exceder los ${LIMITES.CODIGO} caracteres.`);
+        } else {
+            setCodigoError("");
+        }
     };
 
     const handleNumberChange = (e) => {
@@ -735,10 +787,13 @@ export default function Productos({ initialProductos = [], user }) {
                                         id="nombre"
                                         name="nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE}
                                     />
+                                    {nombreError && <p className="text-red-500 text-sm mt-1">{nombreError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombre.length}/{LIMITES.NOMBRE} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -750,10 +805,13 @@ export default function Productos({ initialProductos = [], user }) {
                                         id="codigo"
                                         name="codigo"
                                         value={formData.codigo}
-                                        onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                                        onChange={handleCodigoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.CODIGO}
                                     />
+                                    {codigoError && <p className="text-red-500 text-sm mt-1">{codigoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.codigo.length}/{LIMITES.CODIGO} caracteres</p>
                                 </div>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="unidad">
@@ -878,10 +936,13 @@ export default function Productos({ initialProductos = [], user }) {
                                         id="nombre"
                                         name="nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        onChange={handleNombreChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.NOMBRE}
                                     />
+                                    {nombreError && <p className="text-red-500 text-sm mt-1">{nombreError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.nombre.length}/{LIMITES.NOMBRE} caracteres</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -893,10 +954,13 @@ export default function Productos({ initialProductos = [], user }) {
                                         id="codigo"
                                         name="codigo"
                                         value={formData.codigo}
-                                        onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                                        onChange={handleCodigoChange}
                                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         required
+                                        maxLength={LIMITES.CODIGO}
                                     />
+                                    {codigoError && <p className="text-red-500 text-sm mt-1">{codigoError}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{formData.codigo.length}/{LIMITES.CODIGO} caracteres</p>
                                 </div>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="unidad">
